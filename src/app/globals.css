@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #1c1916;
+  --ink-soft: #5c564e;
+  --paper: #f3eee6;
+  --paper-2: #ebe4d8;
+  --card: #fbf8f2;
+  --line: #d9d0c3;
+  --copper: #c45c26;
+  --copper-dark: #9a4418;
+  --sage: #5c6b5a;
+  --danger: #9b2c2c;
+}
+
+@theme inline {
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-copper: var(--copper);
+  --color-copper-dark: var(--copper-dark);
+  --color-sage: var(--sage);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-outfit);
+  --font-serif: var(--font-cormorant);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+
+::selection {
+  background: #e8c9b5;
+  color: var(--ink);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-up 0.45s ease both;
+}
