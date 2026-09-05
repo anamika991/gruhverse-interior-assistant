@@ -31,6 +31,11 @@ export interface RoomBrief {
   imageFileName?: string;
 }
 
+export interface PhotoInsight {
+  title: string;
+  detail: string;
+}
+
 export interface ColourSwatch {
   name: string;
   hex: string;
@@ -73,6 +78,7 @@ export interface DesignRecommendation {
   materials: MaterialRecommendation[];
   budget: BudgetBreakdown;
   designerNotes: string[];
+  photoInsights?: PhotoInsight[];
 }
 
 export interface DesignModificationRequest {

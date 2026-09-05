@@ -1,4 +1,5 @@
 import { apiFetch, getApiBase } from "@/lib/api/client";
+import { API_ROUTES } from "@/lib/api/contract";
 import type {
   DesignRecommendation,
   RoomBrief,
@@ -6,18 +7,18 @@ import type {
 } from "@/lib/api/types";
 
 export function generateDesign(brief: RoomBrief): Promise<DesignRecommendation> {
-  return apiFetch<DesignRecommendation>("/designs", {
+  return apiFetch<DesignRecommendation>(API_ROUTES.designs, {
     method: "POST",
     body: JSON.stringify(brief),
   });
 }
 
 export function fetchDesign(id: string): Promise<DesignRecommendation> {
-  return apiFetch<DesignRecommendation>(`/designs/${id}`);
+  return apiFetch<DesignRecommendation>(API_ROUTES.design(id));
 }
 
 export function listDesigns(): Promise<DesignRecommendation[]> {
-  return apiFetch<DesignRecommendation[]>("/designs");
+  return apiFetch<DesignRecommendation[]>(API_ROUTES.designs);
 }
 
 export function modifyDesign(
@@ -25,7 +26,7 @@ export function modifyDesign(
   instruction: string,
   currentDesign: DesignRecommendation,
 ): Promise<DesignRecommendation> {
-  return apiFetch<DesignRecommendation>(`/designs/${id}/modifications`, {
+  return apiFetch<DesignRecommendation>(API_ROUTES.modifications(id), {
     method: "POST",
     body: JSON.stringify({ instruction, currentDesign }),
   });
@@ -40,7 +41,7 @@ export async function streamDesign(
   onEvent: (event: StreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<DesignRecommendation> {
-  const url = `${getApiBase()}/designs/stream`;
+  const url = `${getApiBase()}${API_ROUTES.stream}`;
   const response = await fetch(url, {
     method: "POST",
     signal,

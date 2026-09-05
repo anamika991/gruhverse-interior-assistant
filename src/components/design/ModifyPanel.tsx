@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { streamDesign } from "@/lib/api/design-service";
 import type { DesignRecommendation, StreamEvent } from "@/lib/api/types";
@@ -24,6 +24,11 @@ export function ModifyPanel({
   const [status, setStatus] = useState<"idle" | "streaming" | "error">("idle");
   const [progress, setProgress] = useState<Extract<StreamEvent, { type: "progress" }>>();
   const [error, setError] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => abortRef.current?.abort();
+  }, []);
 
   async function submit() {
     if (instruction.trim().length < 8) {
@@ -33,18 +38,22 @@ export function ModifyPanel({
     }
     setStatus("streaming");
     setError("");
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     try {
       const next = await streamDesign(
         { instruction: instruction.trim(), currentDesign: design },
         (event) => {
           if (event.type === "progress") setProgress(event);
         },
+        abortRef.current.signal,
       );
       setCurrentDesign(next);
       onUpdated(next);
       setInstruction("");
       setStatus("idle");
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       setStatus("error");
       setError(err instanceof Error ? err.message : "Could not update the design.");
     }
@@ -71,6 +80,7 @@ export function ModifyPanel({
         value={instruction}
         onChange={(e) => setInstruction(e.target.value)}
         placeholder="Make it more minimal and reduce the budget to ₹1.5 lakh."
+        aria-invalid={status === "error"}
         className="mt-4 w-full resize-y rounded-xl border border-line bg-paper px-3 py-2.5 text-sm outline-none focus:border-copper focus:ring-2 focus:ring-copper/20"
       />
       {status === "error" ? (

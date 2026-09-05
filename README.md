@@ -76,4 +76,6 @@ Switching backends: set `NEXT_PUBLIC_API_BASE_URL` to `http://localhost:8080/api
 
 ## Live deployment
 
-Not deployed from this environment (no Vercel/GitHub credentials in the session). A typical path: push the repo, import in Vercel, framework preset Next.js. Mock APIs run as Next route handlers on the same origin.
+[https://gruhverse-interior-assistant.vercel.app](https://gruhverse-interior-assistant.vercel.app)
+
+The mock APIs run as Next.js route handlers on the same origin.

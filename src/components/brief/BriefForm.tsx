@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RoomImageField } from "@/components/brief/RoomImageField";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +10,7 @@ import { streamDesign } from "@/lib/api/design-service";
 import { DESIGN_STYLES, ROOM_TYPES, type StreamEvent } from "@/lib/api/types";
 import { formatBudgetInput, ROOM_TYPE_LABEL, STYLE_LABEL } from "@/lib/format";
 import {
+  firstBriefError,
   formValuesToBrief,
   validateBriefForm,
   validateImageFile,
@@ -37,9 +38,11 @@ export function BriefForm() {
   const [status, setStatus] = useState<"idle" | "streaming" | "error">("idle");
   const [progress, setProgress] = useState<Extract<StreamEvent, { type: "progress" }>>();
   const [errorMessage, setErrorMessage] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     return () => {
+      abortRef.current?.abort();
       if (imagePreview) URL.revokeObjectURL(imagePreview);
     };
   }, [imagePreview]);
@@ -78,28 +81,41 @@ export function BriefForm() {
     e.preventDefault();
     const nextErrors = validateBriefForm(values);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length || imageError) return;
+    if (Object.keys(nextErrors).length || imageError) {
+      const first = firstBriefError(nextErrors);
+      if (first) document.getElementById(first)?.focus();
+      return;
+    }
 
     setStatus("streaming");
     setErrorMessage("");
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
     try {
       const brief = formValuesToBrief(values, imageName);
-      const design = await streamDesign({ brief }, (event) => {
-        if (event.type === "progress") setProgress(event);
-      });
+      const design = await streamDesign(
+        { brief },
+        (event) => {
+          if (event.type === "progress") setProgress(event);
+        },
+        abortRef.current.signal,
+      );
       setCurrentDesign(design);
       router.push(`/design/${design.id}`);
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") return;
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Could not generate a design.");
     }
   }
 
   if (status === "streaming") {
+    const percent = progress ? (progress.step / progress.total) * 100 : 8;
     return (
       <div
         className="rounded-2xl border border-line bg-ink px-6 py-10 text-paper sm:px-10"
         aria-live="polite"
+        aria-busy="true"
       >
         <p className="text-[11px] uppercase tracking-[0.24em] text-paper/60">
           Composing
@@ -108,12 +124,17 @@ export function BriefForm() {
         <p className="mt-3 max-w-md text-sm text-paper/70">
           {progress?.message ?? "Connecting to the design service…"}
         </p>
-        <div className="mt-8 h-1 overflow-hidden rounded-full bg-white/10">
+        <div
+          className="mt-8 h-1 overflow-hidden rounded-full bg-white/10"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={progress?.total ?? 5}
+          aria-valuenow={progress?.step ?? 0}
+          aria-label="Design generation progress"
+        >
           <div
             className="h-full bg-copper transition-all duration-500"
-            style={{
-              width: `${progress ? (progress.step / progress.total) * 100 : 8}%`,
-            }}
+            style={{ width: `${percent}%` }}
           />
         </div>
         <p className="mt-3 text-xs text-paper/50">
@@ -123,6 +144,8 @@ export function BriefForm() {
     );
   }
 
+  const errorCount = Object.keys(errors).length + (imageError ? 1 : 0);
+
   return (
     <form onSubmit={onSubmit} noValidate className="flex min-h-0 flex-1 flex-col">
       {status === "error" ? (
@@ -131,10 +154,19 @@ export function BriefForm() {
         </div>
       ) : null}
 
+      {errorCount > 0 ? (
+        <div
+          role="alert"
+          className="mb-4 rounded-xl border border-danger/20 bg-[#f8ece8] px-3 py-2 text-xs text-danger"
+        >
+          Please fix {errorCount} {errorCount === 1 ? "field" : "fields"} before generating.
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-4 pb-24 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pb-1">
-        <fieldset>
+        <fieldset aria-required="true">
           <legend className="mb-1.5 text-sm font-medium">Room type</legend>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Room type">
             {ROOM_TYPES.map((type) => {
               const selected = values.roomType === type;
               return (
@@ -174,6 +206,7 @@ export function BriefForm() {
                 value={values.lengthFt}
                 onChange={(e) => update("lengthFt", e.target.value)}
                 aria-invalid={Boolean(errors.lengthFt)}
+                aria-describedby={errors.lengthFt ? "lengthFt-error" : undefined}
               />
             </Field>
             <Field id="widthFt" label="Width (ft)" error={errors.widthFt}>
@@ -184,6 +217,7 @@ export function BriefForm() {
                 value={values.widthFt}
                 onChange={(e) => update("widthFt", e.target.value)}
                 aria-invalid={Boolean(errors.widthFt)}
+                aria-describedby={errors.widthFt ? "widthFt-error" : undefined}
               />
             </Field>
           </div>
@@ -213,13 +247,16 @@ export function BriefForm() {
               value={values.budgetInr}
               onChange={(e) => update("budgetInr", formatBudgetInput(e.target.value))}
               aria-invalid={Boolean(errors.budgetInr)}
+              aria-describedby={
+                errors.budgetInr ? "budgetInr-error" : "budgetInr-hint"
+              }
             />
           </div>
         </Field>
 
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium">Design style</legend>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Design style">
             {DESIGN_STYLES.map((style) => {
               const selected = values.style === style;
               return (
@@ -257,6 +294,12 @@ export function BriefForm() {
             className={inputClass}
             value={values.colourPreference}
             onChange={(e) => update("colourPreference", e.target.value)}
+            aria-invalid={Boolean(errors.colourPreference)}
+            aria-describedby={
+              errors.colourPreference
+                ? "colourPreference-error"
+                : "colourPreference-hint"
+            }
           />
         </Field>
 

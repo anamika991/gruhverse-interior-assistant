@@ -51,6 +51,6 @@ export const useProjectStore = create<ProjectState>()(
       },
       clearProject: () => set({ projectMaterials: [] }),
     }),
-    { name: "gruhverse-project" },
+    { name: "gruhverse-project", version: 1 },
   ),
 );

@@ -8,13 +8,22 @@ import {
 import { parseInrInput } from "@/lib/format";
 
 export type BriefFormValues = {
-  roomType: string;
+  roomType: RoomType;
   lengthFt: string;
   widthFt: string;
   budgetInr: string;
-  style: string;
+  style: DesignStyle;
   colourPreference: string;
 };
+
+export const BRIEF_FIELD_ORDER: (keyof BriefFormValues)[] = [
+  "roomType",
+  "lengthFt",
+  "widthFt",
+  "budgetInr",
+  "style",
+  "colourPreference",
+];
 
 export type BriefFieldErrors = Partial<Record<keyof BriefFormValues, string>>;
 
@@ -26,7 +35,7 @@ const MAX_DIM = 80;
 export function validateBriefForm(values: BriefFormValues): BriefFieldErrors {
   const errors: BriefFieldErrors = {};
 
-  if (!ROOM_TYPES.includes(values.roomType as RoomType)) {
+  if (!ROOM_TYPES.includes(values.roomType)) {
     errors.roomType = "Choose a room type.";
   }
 
@@ -53,7 +62,7 @@ export function validateBriefForm(values: BriefFormValues): BriefFieldErrors {
     errors.budgetInr = "Enter a realistic residential budget.";
   }
 
-  if (!DESIGN_STYLES.includes(values.style as DesignStyle)) {
+  if (!DESIGN_STYLES.includes(values.style)) {
     errors.style = "Choose a design style.";
   }
 
@@ -71,11 +80,11 @@ export function formValuesToBrief(
   imageFileName?: string,
 ): RoomBrief {
   return {
-    roomType: values.roomType as RoomType,
+    roomType: values.roomType,
     lengthFt: Number(values.lengthFt),
     widthFt: Number(values.widthFt),
     budgetInr: parseInrInput(values.budgetInr),
-    style: values.style as DesignStyle,
+    style: values.style,
     colourPreference: values.colourPreference.trim(),
     imageFileName,
   };
@@ -92,4 +101,10 @@ export function validateImageFile(file: File | null): string | undefined {
     return "Keep the image under 5 MB.";
   }
   return undefined;
+}
+
+export function firstBriefError(
+  errors: BriefFieldErrors,
+): keyof BriefFormValues | undefined {
+  return BRIEF_FIELD_ORDER.find((key) => errors[key]);
 }

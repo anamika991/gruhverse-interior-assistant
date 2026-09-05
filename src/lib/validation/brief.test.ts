@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { formValuesToBrief, validateBriefForm } from "@/lib/validation/brief";
+import { firstBriefError, formValuesToBrief, validateBriefForm, type BriefFormValues } from "@/lib/validation/brief";
 
 describe("validateBriefForm", () => {
-  const valid = {
+  const valid: BriefFormValues = {
     roomType: "LIVING_ROOM",
     lengthFt: "16",
     widthFt: "12",
@@ -30,5 +30,11 @@ describe("validateBriefForm", () => {
     expect(brief.lengthFt).toBe(16);
     expect(brief.budgetInr).toBe(250000);
     expect(brief.imageFileName).toBe("room.jpg");
+  });
+
+  it("returns the first invalid field in visual order", () => {
+    expect(firstBriefError({ colourPreference: "required", lengthFt: "required" })).toBe(
+      "lengthFt",
+    );
   });
 });

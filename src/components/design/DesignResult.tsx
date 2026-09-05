@@ -53,6 +53,24 @@ export function DesignResult({
               </li>
             ))}
           </ul>
+          {design.photoInsights && design.photoInsights.length > 0 ? (
+            <section
+              aria-labelledby="photo-insights-heading"
+              className="rounded-2xl border border-line bg-card p-5"
+            >
+              <h2 id="photo-insights-heading" className="font-serif text-xl">
+                From your room photo
+              </h2>
+              <ul className="mt-3 space-y-3">
+                {design.photoInsights.map((insight) => (
+                  <li key={insight.title}>
+                    <p className="text-sm font-medium">{insight.title}</p>
+                    <p className="mt-0.5 text-sm text-ink-soft">{insight.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </div>
       </div>
 
@@ -78,7 +96,8 @@ export function DesignResult({
               <li key={item.id}>
                 <Link
                   href={`/design/${item.id}`}
-                  className={`block w-44 rounded-xl border p-3 text-left text-sm ${
+                    aria-current={item.id === design.id ? "page" : undefined}
+                    className={`block w-44 rounded-xl border p-3 text-left text-sm ${
                     item.id === design.id
                       ? "border-ink bg-ink text-paper"
                       : "border-line bg-card hover:border-ink/30"

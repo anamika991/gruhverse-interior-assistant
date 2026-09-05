@@ -45,6 +45,7 @@ export function AppHeader() {
               <Link
                 key={link.href}
                 href={link.href === "/design" ? "/design" : link.href}
+                aria-current={active ? "page" : undefined}
                 className={`rounded-full px-3 py-1.5 text-sm transition ${
                   active
                     ? "bg-ink text-paper"

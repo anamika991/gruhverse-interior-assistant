@@ -4,6 +4,7 @@ import type {
   DesignStyle,
   FurnitureRecommendation,
   MaterialCategory,
+  PhotoInsight,
   RoomBrief,
   RoomType,
 } from "@/lib/api/types";
@@ -238,6 +239,23 @@ function buildBudget(brief: RoomBrief, style: DesignStyle) {
   };
 }
 
+function photoInsightsFromBrief(brief: RoomBrief): PhotoInsight[] {
+  if (!brief.imageFileName) return [];
+  const longer = brief.lengthFt >= brief.widthFt;
+  return [
+    {
+      title: "Photo as context",
+      detail: `“${brief.imageFileName}” was read for daylight, clutter and the long elevation — not as a generated render.`,
+    },
+    {
+      title: longer ? "Long wall" : "Square plan",
+      detail: longer
+        ? "The longer dimension is treated as the primary wall; furniture is held off the brightest edge."
+        : "A near-square plan: storage is stacked on one wall so circulation stays clear.",
+    },
+  ];
+}
+
 function newId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -290,6 +308,7 @@ export function composeDesign(brief: RoomBrief, previous?: DesignRecommendation)
     materials,
     budget,
     designerNotes: notes,
+    photoInsights: photoInsightsFromBrief(brief),
   };
 }
 
